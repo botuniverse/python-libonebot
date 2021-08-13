@@ -11,15 +11,20 @@ class Action(BaseModel):
     echo: Dict = {}
 
 
-class CoreAction(Action):
-    pass
+class ActionDict(dict):
+    def __getattr__(self, item: str) -> Any:
+        return self[item]
 
 
-def _core_action_set_factory() -> Iterable[CoreAction]:
-    action_list = ["send_message"]
-    core_action_set = set()
-    for action in action_list:
-        pass
+_core_actions = {
+    "send_message": "send_message",
+}
+
+CoreActions = ActionDict(_core_actions)
 
 
-CoreActionSet = set()
+# def _core_action_set_factory() -> Iterable[CoreActions]:
+#     action_list = ["send_message"]
+#     core_action_set = set()
+#     for action in action_list:
+#         pass

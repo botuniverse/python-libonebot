@@ -1,7 +1,7 @@
 """
 
 """
-from typing import Dict, Optional
+from typing import Dict, Optional, Callable
 
 
 class Event(dict):
@@ -12,3 +12,7 @@ class Event(dict):
     detail_type: Optional[str]
     sub_type: Optional[str]
     extended: Optional[Dict]
+
+
+class CoreEvent(Event):
+    pass
