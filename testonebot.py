@@ -58,4 +58,4 @@ async def group_system_message(*args, **kwargs):
 
 
 if __name__ == "__main__":
-    onebot.run()
+    asyncio.get_event_loop().run_until_complete(onebot.run())
