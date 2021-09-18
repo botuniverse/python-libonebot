@@ -2,7 +2,9 @@
 
 """
 import asyncio
-import requests
+import traceback
+
+import aiohttp
 import websockets
 
 from typing import Awaitable
@@ -13,6 +15,8 @@ from hypercorn.config import Config
 
 from .bus import ActionBus
 from .action import Action
+
+GET_LATEST_EVENTS = "get_latest_events"
 
 
 class Comm:
@@ -38,15 +42,23 @@ class CommHTTP(Comm):
         super().__init__(logger)
         self._host = host
         self._port = port
+        self._latest_events = []
         self._server_app = FastAPI()
 
         async def _action_handler(action: Action) -> Awaitable:
-            result = await self._action_bus.emit(**action.dict())
-            result = dict(result)
+            if action.action == GET_LATEST_EVENTS:
+                result = self._get_latest_events()
+            else:
+                result = await self._action_bus.emit(**action.dict())
+                result = dict(result)
             result["echo"] = action.echo
             return result
 
         self._server_app.post("/")(_action_handler)
+
+    def _get_latest_events(self):
+        self._latest_events
+        return {}
 
     async def run(self) -> Awaitable:
         config = Config()
@@ -58,22 +70,13 @@ class CommHTTPWebHook(Comm):
     def __init__(self, logger, host):
         super().__init__(logger)
         self._host = host
-        self._http_session = requests.session()
-        self._event_queue = asyncio.Queue()
+        self._http_session = aiohttp.ClientSession()
 
     async def push_event(self, *args, **event_data) -> Awaitable:
-        await self._event_queue.put(event_data)
-
-    async def run(self) -> Awaitable:
-        loop = asyncio.get_event_loop()
-
-        async def push():
-            while True:
-                eve = await self._event_queue.get()
-                self._http_session.post(self._host, data=eve)
-
-        task = loop.create_task(push())
-        await task
+        try:
+            await self._http_session.post(self._host, json=event_data)
+        except aiohttp.ClientError:
+            print(traceback.format_exc())
 
 
 class CommWS(Comm):
@@ -85,7 +88,6 @@ class CommWS(Comm):
         self._event_queues = set()
 
         async def websocket_endpoint(websocket: WebSocket):
-            loop = asyncio.get_event_loop()
             event_queue = asyncio.Queue()
             self._event_queues.add(event_queue)
             await websocket.accept()
@@ -124,12 +126,14 @@ class CommWSReverse(Comm):
         self._host = host
         self._port = port
         self._reconnect = reconnect
-        self._event_queue = asyncio.Queue()
+        self._event_queues = set()
 
     async def push_event(self, *args, **event_data) -> Awaitable:
-        self._event_queue.put(event_data)
+        await asyncio.gather(*[queue.put(event_data) for queue in self._event_queues])
 
     async def run(self) -> Awaitable:
+        event_queue = asyncio.Queue()
+        self._event_queues.add(event_queue)
         while True and not self._close_flag:
             try:
                 async with websockets.connect(
@@ -146,7 +150,7 @@ class CommWSReverse(Comm):
 
                         async def send():
                             while True:
-                                eve = await self._event_queue.get()
+                                eve = await event_queue.get()
                                 await websocket.send_json(eve)
 
                         await asyncio.gather(send(), receive(), return_exceptions=True)
