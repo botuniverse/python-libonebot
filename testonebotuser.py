@@ -52,10 +52,8 @@ def event():
 
 async def onebot_user_ws_test():
     async with websockets.connect("ws://127.0.0.1:8081/ws") as onebot_user_ws:
-        await onebot_user_ws.send(json.dumps(ACTION_DATA1))
-        assert json.loads(await onebot_user_ws.recv()) == ACTION_RESULT1
-        await onebot_user_ws.send(json.dumps(ACTION_DATA2))
-        assert json.loads(await onebot_user_ws.recv()) == ACTION_RESULT2
+        while True:
+            print(await onebot_user_ws.recv())
 
 
 def onebot_user_http_test():
@@ -66,6 +64,5 @@ def onebot_user_http_test():
 
 
 if __name__ == "__main__":
-    asyncio.run(onebot_user_ws_test())
     onebot_user_http_test()
-    print("Test passed.")
+    asyncio.run(onebot_user_ws_test())

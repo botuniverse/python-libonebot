@@ -9,7 +9,7 @@ EVENT_DATA = {
     "type": "message",
     "detail_type": "",
     "sub_type": "",
-    "extended": {"data": "blah"},
+    "extended": {"data": "blah", "count": 0},
 }
 ACTION_DATA1 = {
     "action": "send_message",
@@ -19,7 +19,7 @@ ACTION_DATA1 = {
 
 ACTION_DATA2 = {
     "action": "qq_group_system_message",
-    "params": {"group_id": "123", "message": "abcc"},
+    "params": {"group_id": "123", "message": [{"type": "text"}, {"type": "text"}]},
     "echo": {"id": "2"},
 }
 
@@ -42,20 +42,29 @@ onebot = libonebot.OneBot()
 
 
 @onebot.on_action("send_message")
-async def send_message(*args, **kwargs):
+async def send_message(**kwargs):
     print(f"Action send_message received {str(kwargs)}")
-    kwargs["action"] = ACTION_DATA1["action"]
-    assert kwargs == ACTION_DATA1
+    assert kwargs == ACTION_DATA1["params"]
     return ACTION_RESULT1
 
 
-@onebot.on_action("group_system_message", "qq")
-async def group_system_message(*args, **kwargs):
+@onebot.on_action("qq_group_system_message")
+async def group_system_message(**kwargs):
     print(f"Extended action qq_group_system_message received {str(kwargs)}")
-    kwargs["action"] = ACTION_DATA2["action"]
-    assert kwargs == ACTION_DATA2
+    assert kwargs == ACTION_DATA2["params"]
     return ACTION_RESULT2
 
 
+async def onebot_main():
+    async def count():
+        while True:
+            print(f'Sending event with count {EVENT_DATA["extended"]["count"]}')
+            await onebot.push_event(**EVENT_DATA)
+            EVENT_DATA["extended"]["count"] += 1
+            await asyncio.sleep(5)
+
+    await asyncio.gather(onebot.run(), count())
+
+
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(onebot.run())
+    asyncio.run(onebot_main())
