@@ -4,7 +4,7 @@
 
 import asyncio
 from collections import defaultdict
-from typing import Callable, List, Any
+from typing import Callable, List, Any, Dict
 
 from .utils import run_async_funcs
 from .action import Action
@@ -21,14 +21,9 @@ class ActionBus:
         if func in self._subscribers[action]:
             self._subscribers[action] = None
 
-    async def emit(self, action: str, *args, **kwargs):
-        result = await self._subscribers[action](*args, **kwargs)
+    async def emit(self, action: str, params: Dict, **kwargs):
+        result = await self._subscribers[action](**params)
         return result
-        # results = await run_async_funcs(self._subscribers[action], *args, **kwargs)
-        # tasks = []
-        # for funcs in self._subscribers.values():
-        #     tasks.append(run_async_funcs(funcs, *args, **kwargs))
-        # await run_async_funcs(tasks, *args, **kwargs)
 
 
 class EventBus:
