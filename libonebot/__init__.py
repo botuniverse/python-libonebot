@@ -27,7 +27,12 @@ WS_RECONNECT_INTERVAL = 5000
 
 
 class OneBot:
-    def __init__(self, config: Dict = None, logger=None):
+    def __init__(
+        self,
+        config: Optional[Dict] = None,
+        logger=None,
+        appname: Optional[str] = "libonebot",
+    ):
         self._comm_http = None
         self._comm_http_webhook = None
         self._comm_ws = None
@@ -35,7 +40,7 @@ class OneBot:
         if logger:
             self.logger = logger
         else:
-            self.logger = logging.Logger("libonebot")
+            self.logger = logging.Logger(appname)
             self.logger.setLevel(logging.INFO)
         self._action_bus = ActionBus()
         self._event_bus = EventBus()
@@ -48,6 +53,7 @@ class OneBot:
         """
         self._comm_http = CommHTTP(self.logger, host, port)
         self._comm_http.register_action_handler(self._action_bus)
+        self._event_bus.subscribe(self._comm_http.push_event)
 
     def _register_http_webhook(self, host: str) -> None:
         self._comm_http_webhook = CommHTTPWebHook(self.logger, host)
