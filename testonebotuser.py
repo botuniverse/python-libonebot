@@ -22,7 +22,7 @@ ACTION_DATA1 = {
 
 ACTION_DATA2 = {
     "action": "qq_group_system_message",
-    "params": {"group_id": "123", "message": "abcc"},
+    "params": {"group_id": "123", "message": [{"type": "text"}, {"type": "text"}]},
     "echo": {"id": "2"},
 }
 
@@ -46,8 +46,8 @@ onebot_user = Flask("user")
 @onebot_user.route("/", methods=["POST"])
 def event():
     print(f"Event received {str(request.json)}")
-    assert dict(request.json) == EVENT_DATA
-    return None
+    # assert dict(request.json) == EVENT_DATA
+    return {}
 
 
 async def onebot_user_ws_test():
@@ -64,5 +64,4 @@ def onebot_user_http_test():
 
 
 if __name__ == "__main__":
-    onebot_user_http_test()
-    asyncio.run(onebot_user_ws_test())
+    onebot_user.run(host="127.0.0.1", port=5700)

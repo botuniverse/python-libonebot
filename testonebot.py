@@ -37,8 +37,14 @@ ACTION_RESULT2 = {
     "echo": ACTION_DATA2["echo"],
 }
 
+CONFIG = {
+    "http": {"enable": True, "host": "127.0.0.1", "port": 8080},
+    "http_webhook": {"enable": True, "host": "https://127.0.0.1:5700"},
+    "ws": {"enable": True, "host": "127.0.0.1", "port": 8081},
+}
 
-onebot = libonebot.OneBot()
+
+onebot = libonebot.OneBot(CONFIG)
 
 
 @onebot.on_action("send_message")
