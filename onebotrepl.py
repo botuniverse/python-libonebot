@@ -9,7 +9,6 @@ from hypercorn.asyncio import serve
 from hypercorn.config import Config
 import websockets
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from flask import Flask, request
 
 from libonebot import OneBot, Event
 
@@ -52,7 +51,7 @@ class OneBotRepl:
 
         @self.http_webhook_user.post("/")
         def event(eve: Event):
-            print(f"User received Event from HTTP Webhook: {str(eve.dict())}")
+            print(f"Bot received Event from HTTP Webhook: {str(eve.dict())}")
             return {}
 
         self.ws_reverse_user = FastAPI()
@@ -68,7 +67,7 @@ class OneBotRepl:
                     while True:
                         eve = await websocket.receive_json()
                         print(
-                            f"User received Event or Action result from WebSocket reverse: {str(eve)}"
+                            f"Bot received Event or Action result from WebSocket reverse: {str(eve)}"
                         )
 
                 await receive()
@@ -148,21 +147,21 @@ class OneBotRepl:
 
     async def test_http_action_message(self, message):
         action = self.action_message(message)
-        print(f"User sent Action with HTTP: {str(action)}")
+        print(f"Bot sent Action with HTTP: {str(action)}")
         result = await self.http_user.post(
             "http://127.0.0.1:8080",
             json=action,
         )
-        print(f"User received Action result from HTTP: {str(await result.json())}")
+        print(f"Bot received Action result from HTTP: {str(await result.json())}")
 
     async def test_ws_action_message(self, message):
         action = self.action_message(message)
-        print(f"User sent Action with WebSocket: {str(action)}")
+        print(f"Bot sent Action with WebSocket: {str(action)}")
         await self.ws_user.send(json.dumps(action))
 
     async def test_ws_reverse_action_message(self, message):
         action = self.action_message(message)
-        print(f"User sent Action with WebSocket reverse: {str(action)}")
+        print(f"Bot sent Action with WebSocket reverse: {str(action)}")
         await self.ws_reverse_user_connection.send_json(action)
 
     async def test_http_get_latest_events(self):
@@ -172,9 +171,9 @@ class OneBotRepl:
             "echo": {"id": self._id},
         }
         self._id += 1
-        print(f"User sent Action with HTTP: {str(action)}")
+        print(f"Bot sent Action with HTTP: {str(action)}")
         result = await self.http_user.post("http://127.0.0.1:8080", json=action)
-        print(f"User received Action result from HTTP: {str(await result.json())}")
+        print(f"Bot received Action result from HTTP: {str(await result.json())}")
 
     def action_message(self, message):
         action = {
