@@ -9,7 +9,7 @@ import aiohttp
 import msgpack
 import websockets
 
-from typing import Awaitable
+from typing import Awaitable, Union
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from hypercorn.asyncio import serve
@@ -157,15 +157,15 @@ class CommWSReverse(Comm):
 
                         async def receive():
                             while True:
-                                act = parse_message(await websocket.receive())
+                                act = parse_message(await websocket.recv())
                                 result = await self._action_bus.emit(**act)
                                 result["echo"] = act["echo"]
-                                await websocket.send_json(result)
+                                await websocket.send(json.dumps(result))
 
                         async def send():
                             while True:
                                 eve = await event_queue.get()
-                                await websocket.send_json(eve)
+                                await websocket.send(json.dumps(eve))
 
                         await asyncio.gather(send(), receive(), return_exceptions=True)
                     except websockets.ConnectionClosed:
@@ -179,10 +179,14 @@ class CommWSReverse(Comm):
             await asyncio.sleep(self._reconnect / 1000)
 
 
-def parse_message(msg: dict):
-    if "text" in msg.keys() and not msg["text"] is None:
-        return json.loads(msg["text"])
-    elif "bytes" in msg.keys() and not msg["bytes"] is None:
-        return msgpack.unpackb(msg["bytes"])
-    else:
-        raise TypeError(f"Cannot parse message {str(msg)}")
+def parse_message(msg: Union[str, bytes, dict]):
+    if isinstance(msg, dict):
+        if "text" in msg.keys() and not msg["text"] is None:
+            return json.loads(msg["text"])
+        elif "bytes" in msg.keys() and not msg["bytes"] is None:
+            return msgpack.unpackb(msg["bytes"])
+    elif isinstance(msg, str):
+        return json.loads(msg)
+    elif isinstance(msg, bytes):
+        return msgpack.unpackb(msg)
+    raise TypeError(f"Cannot parse message {str(msg)}")
