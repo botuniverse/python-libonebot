@@ -2,15 +2,19 @@
 
 """
 from typing import Dict, Optional, Callable
+from pydantic import BaseModel
 
 
-class Event(dict):
+class Event(BaseModel):
     user_id: Optional[str]
     self_id: str
-    message: str
+    message: Optional[str]
     type: str
-    detail_type: Optional[str]
-    sub_type: Optional[str]
+    detail_type: str
+    sub_type: str
+    id: int
+    time: int
+    platform: str
     extended: Optional[Dict]
 
 
