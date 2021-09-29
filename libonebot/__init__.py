@@ -15,7 +15,7 @@ from .event import Event
 from .action import Action
 from .exceptions import ConfigError
 
-__all__ = []
+__all__ = ["OneBot"]
 HTTP_HOST = "127.0.0.1"
 HTTP_PORT = 8080
 HTTP_WEBHOOK = "http://127.0.0.1:5700"
@@ -140,4 +140,4 @@ class OneBot:
             communication.append(self._comm_ws.run())
         if self._comm_ws_reverse:
             communication.append(self._comm_ws_reverse.run())
-        await asyncio.gather(*communication)
+        await asyncio.gather(*communication, return_exceptions=True)
