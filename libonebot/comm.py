@@ -2,9 +2,11 @@
 
 """
 import asyncio
+import json
 import traceback
 
 import aiohttp
+import msgpack
 import websockets
 
 from typing import Awaitable
@@ -107,7 +109,7 @@ class CommWS(Comm):
 
                 async def receive():
                     while True:
-                        act = await websocket.receive_json()
+                        act = parse_message(await websocket.receive())
                         result = await self._action_bus.emit(**act)
                         result["echo"] = act["echo"]
                         await websocket.send_json(result)
@@ -155,7 +157,7 @@ class CommWSReverse(Comm):
 
                         async def receive():
                             while True:
-                                act = await websocket.receive_json()
+                                act = parse_message(await websocket.receive())
                                 result = await self._action_bus.emit(**act)
                                 result["echo"] = act["echo"]
                                 await websocket.send_json(result)
@@ -174,4 +176,13 @@ class CommWSReverse(Comm):
                 self.logger.warning(
                     f"Connect reverse WebSocket failed. Reconnect in {self._reconnect} seconds"
                 )
-            await asyncio.sleep(self._reconnect)
+            await asyncio.sleep(self._reconnect / 1000)
+
+
+def parse_message(msg: dict):
+    if "text" in msg.keys() and not msg["text"] is None:
+        return json.loads(msg["text"])
+    elif "bytes" in msg.keys() and not msg["bytes"] is None:
+        return msgpack.unpackb(msg["bytes"])
+    else:
+        raise TypeError(f"Cannot parse message {str(msg)}")
